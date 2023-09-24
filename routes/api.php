@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Api\RoomController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -15,7 +16,9 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 */
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return response()->json($request->user());
+    return $request->user();
 });
 Route::post('/pusher_test', [RegisteredUserController::class, 'pusher_test']);
+Route::post('/rooms/create', [RoomController::class, 'create']);
+
 require __DIR__ . '/auth.php';

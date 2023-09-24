@@ -16,7 +16,7 @@ use Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-use App\Event\MyEvent;
+use App\Events\MyEvent;
 
 class RegisteredUserController extends Controller
 {
@@ -51,7 +51,6 @@ class RegisteredUserController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->messages());
         }
-        \Log::info(Carbon::now());
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -102,6 +101,9 @@ class RegisteredUserController extends Controller
 
     public function pusher_test(Request $request)
     {
-        // event(new MyEvent($request['text']));
+        $event = event(new MyEvent($request['text']));
+        \Log::info($event);
+        return response()->json($event);
+
     }
 }

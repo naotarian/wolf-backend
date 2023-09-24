@@ -23,7 +23,7 @@ Route::post('/temporary_regist', [RegisteredUserController::class, 'temporary_re
   ->name('temporary_regist');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
   ->middleware('guest')
-  ->name('login');
+  ->name('login_p');
 
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
   ->middleware('guest')

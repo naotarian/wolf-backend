@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Event;
+namespace App\Events;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -12,14 +13,18 @@ class MyEvent implements ShouldBroadcast
   use Dispatchable, InteractsWithSockets, SerializesModels;
 
   public $message;
+  // public $test;
 
   public function __construct($message)
   {
+    \Log::info($message);
     $this->message = $message;
+    // $this->test = 'rrr';
   }
 
   public function broadcastOn()
   {
+    // return new Channel('my-channel', $this->message);
     return ['my-channel'];
   }
 

@@ -17,5 +17,5 @@ Route::get('/', function () {
     return ['Laravel' => app()->version()];
 });
 Route::redirect('/', config('app.frontend_url'))->name('top');
-Route::redirect('/login', config('app.frontend_url') . '/login')->name('login');
+Route::redirect('/login', config('app.frontend_url') . '/login')->name('login_r');
 require __DIR__ . '/auth.php';
