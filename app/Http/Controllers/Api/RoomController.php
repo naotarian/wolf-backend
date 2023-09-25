@@ -33,10 +33,8 @@ class RoomController extends Controller
         foreach ($room->fresh()->users as $user) {
             array_push($users, ['name' => $user->name, 'id' => $user->id]);
         }
-        \Log::info($room->id);
-        \Log::info($users);
         event(new RoomEvent($room->id, $users));
-        return response()->noContent();
+        return response()->json($room);
     }
 
     public function list()
