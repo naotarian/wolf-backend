@@ -20,5 +20,6 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 Route::post('/pusher_test', [RegisteredUserController::class, 'pusher_test']);
 Route::post('/rooms/create', [RoomController::class, 'create']);
+Route::post('/room/participation', [RoomController::class, 'participation']);
 
 require __DIR__ . '/auth.php';

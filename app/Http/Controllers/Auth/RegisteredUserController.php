@@ -101,9 +101,7 @@ class RegisteredUserController extends Controller
 
     public function pusher_test(Request $request)
     {
-        $event = event(new MyEvent($request['text']));
-        \Log::info($event);
-        return response()->json($event);
-
+        event(new MyEvent($request['text']));
+        return response()->noContent();
     }
 }
