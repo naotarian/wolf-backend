@@ -39,8 +39,35 @@ class RoomController extends Controller
 
     public function list()
     {
-        \Log::info('test');
         $rooms = Room::all();
         return response()->json($rooms);
+    }
+
+    public function leaving(Request $request)
+    {
+        $req_room_id = $request['roomId'];
+        $room = Room::find($req_room_id);
+        $user_ids = [];
+        foreach ($room->users as $user) {
+            if ($request['userId'] !== $user->id) array_push($user_ids, $user->id);
+        }
+        $room->users()->sync($user_ids);
+        $users = [];
+        foreach ($room->fresh()->users as $user) {
+            array_push($users, ['name' => $user->name, 'id' => $user->id]);
+        }
+        event(new RoomEvent($room->id, $users));
+        return response()->noContent();
+    }
+
+    public function dissolution(Request $request)
+    {
+        $req_room_id = $request['roomId'];
+        $room = Room::find($req_room_id);
+        if ($room->master_user_id !== $request['userId']) return response()->noContent();
+        $room->users()->sync([]);
+        event(new RoomEvent($room->id, []));
+        $room->delete();
+        return response()->noContent();
     }
 }

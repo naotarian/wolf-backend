@@ -22,5 +22,7 @@ Route::post('/pusher_test', [RegisteredUserController::class, 'pusher_test']);
 Route::post('/rooms/create', [RoomController::class, 'create']);
 Route::get('/rooms/list', [RoomController::class, 'list']);
 Route::post('/room/participation', [RoomController::class, 'participation']);
+Route::post('/room/leaving', [RoomController::class, 'leaving']);
+Route::post('/room/dissolution', [RoomController::class, 'dissolution']);
 
 require __DIR__ . '/auth.php';
