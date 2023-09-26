@@ -49,7 +49,9 @@ class RoomController extends Controller
 
     public function list()
     {
-        $rooms = Room::all();
+        $rooms = Room::with(['room_master' => function ($query) {
+            $query->select(['id', 'name', 'character_id']);
+        }])->select(['id', 'master_user_id'])->get();
         return response()->json($rooms);
     }
 

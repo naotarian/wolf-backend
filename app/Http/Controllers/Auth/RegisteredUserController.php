@@ -53,6 +53,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'character_id' => $request->character,
             'password' => Hash::make($request->password),
             'email_verified_at' => Carbon::now()
         ]);

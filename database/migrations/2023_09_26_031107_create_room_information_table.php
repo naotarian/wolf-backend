@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('room_information', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('room_id')->comment('ルームID');
-            $table->text('rule', 3000)->comment('ルール、注意事項');
+            $table->text('rule', 3000)->nullable()->comment('ルール、注意事項');
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('room_id')->references('id')->on('rooms')->onDelete('cascade');

@@ -17,6 +17,7 @@ class UserSeeder extends Seeder
             User::create([
                 'name' => "test{$i}",
                 'email' => "test{$i}@test.com",
+                'character_id' => $i < 4 ? $i : floor(($i) / 3),
                 'email_verified_at' => Carbon::now(),
                 'password' => 'aaaaaaaa'
             ]);
