@@ -41,7 +41,7 @@ class RoomController extends Controller
         $room->users()->sync($user_ids);
         $users = [];
         foreach ($room->fresh()->users as $user) {
-            array_push($users, ['name' => $user->name, 'id' => $user->id]);
+            array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id]);
         }
         event(new RoomEvent($room->id, $users));
         return response()->json($room);
