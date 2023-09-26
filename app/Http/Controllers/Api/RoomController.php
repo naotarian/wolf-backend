@@ -5,17 +5,27 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Room;
+use App\Models\RoomInformation;
 use App\Events\RoomEvent;
+use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
 {
     public function create(Request $request)
     {
-        $master_user_id = $request['user_id'];
-        $room = Room::create([
-            'master_user_id' => $master_user_id
-        ]);
-        // $room->users()->sync([$master_user_id]);
+        $master_user_id = $request['userId'];
+        $text = $request['text'];
+        $room = DB::transaction(function () use ($master_user_id, $text) {
+            $room = Room::create([
+                'master_user_id' => $master_user_id
+            ]);
+            RoomInformation::create([
+                'room_id' => $room->id,
+                'rule' => $text
+            ]);
+            return $room;
+        }, 3);
+        if (!$room) return response()->noContent();
         return response()->json(['roomId' => $room['id']]);
     }
     public function participation(Request $request)
