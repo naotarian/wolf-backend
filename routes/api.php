@@ -24,5 +24,7 @@ Route::get('/rooms/list', [RoomController::class, 'list']);
 Route::post('/room/participation', [RoomController::class, 'participation']);
 Route::post('/room/leaving', [RoomController::class, 'leaving']);
 Route::post('/room/dissolution', [RoomController::class, 'dissolution']);
+Route::post('/room/voiceUser/add', [RoomController::class, 'voiceUserAdd']);
+Route::post('/room/voiceUser/remove', [RoomController::class, 'voiceUserRemove']);
 
 require __DIR__ . '/auth.php';

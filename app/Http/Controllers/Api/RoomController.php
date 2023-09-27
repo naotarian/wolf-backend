@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Room;
 use App\Models\RoomInformation;
 use App\Events\RoomEvent;
+use App\Events\RoomVoiceUserEvent;
 use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
@@ -26,6 +27,8 @@ class RoomController extends Controller
             return $room;
         }, 3);
         if (!$room) return response()->noContent();
+        session(['voiceUserId' => ['test']]);
+        event(new RoomVoiceUserEvent($room->id, ['test']));
         return response()->json(['roomId' => $room['id']]);
     }
     public function participation(Request $request)
@@ -66,7 +69,7 @@ class RoomController extends Controller
         $room->users()->sync($user_ids);
         $users = [];
         foreach ($room->fresh()->users as $user) {
-            array_push($users, ['name' => $user->name, 'id' => $user->id]);
+            array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id]);
         }
         event(new RoomEvent($room->id, $users));
         return response()->noContent();
@@ -80,6 +83,22 @@ class RoomController extends Controller
         $room->users()->sync([]);
         event(new RoomEvent($room->id, []));
         $room->delete();
+        return response()->noContent();
+    }
+
+    public function voiceUserAdd(Request $request)
+    {
+        $voice_users = $request['voiceOnUser'];
+        array_push($voice_users, $request['userId']);
+        event(new RoomVoiceUserEvent($request->roomId, $voice_users));
+        return response()->noContent();
+    }
+    public function voiceUserRemove(Request $request)
+    {
+        $voice_users = $request['voiceOnUser'];
+        $users = array_diff($voice_users, [$request['userId']]);
+        $users = array_values($users);
+        event(new RoomVoiceUserEvent($request->roomId, $users));
         return response()->noContent();
     }
 }
