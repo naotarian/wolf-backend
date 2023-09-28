@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('room_user_id')->comment('ルームユーザーテーブルID');
             $table->unsignedBigInteger('position_id')->comment('役職ID');
+            $table->boolean('confirmed')->default(false)->comment('ゲーム開始前の確認');
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('room_user_id')->references('id')->on('room_user')->onDelete('cascade');

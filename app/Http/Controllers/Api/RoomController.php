@@ -13,6 +13,8 @@ use App\Models\RoomUser;
 use App\Events\RoomEvent;
 use App\Events\RoomVoiceUserEvent;
 use App\Events\RoomReadyEvent;
+use App\Events\RoomConfirmEvent;
+use Carbon\Carbon;
 //Facades
 use Illuminate\Support\Facades\DB;
 
@@ -36,6 +38,7 @@ class RoomController extends Controller
         session(['voiceUserId' => ['test']]);
         event(new RoomVoiceUserEvent($room->id, ['test']));
         event(new RoomReadyEvent($room->id, 0));
+        event(new RoomConfirmEvent($room->id, false));
         return response()->json(['roomId' => $room['id']]);
     }
     public function participation(Request $request)
@@ -129,7 +132,7 @@ class RoomController extends Controller
         $position_id = $request['positionId'];
         $room_user = RoomUser::where('room_id', $room_id)->where('user_id', $user_id)->first('id');
         $room_user_id = $room_user['id'];
-        $cast = Cast::where('room_user_id', $room_user_id)->first();
+        $cast = $this->userCasting($room_id, $user_id);
         //すでに役が決まっている場合は何もしないでreturn
         if ($cast) return response()->json(['couldBuy' => false]);
         //まだ役が決まっていない場合は役がまだ空いていれば取得する
@@ -202,5 +205,104 @@ class RoomController extends Controller
                 return response()->json(['couldBuy' => false]);
         }
         return response()->json(['couldBuy' => true]);
+    }
+
+    //役職を買わなかった場合の余っている役職からランダム振り分け処理
+    public function ramdom_position(Request $request)
+    {
+        $room_id = $request['roomId'];
+        $user_id = $request['userId'];
+        $room_user = RoomUser::where('room_id', $room_id)->where('user_id', $user_id)->first('id');
+        $room_user_id = $room_user['id'];
+        $cast = $this->userCasting($room_id, $user_id);
+        //すでに役が決まっている場合は何もしないでreturn
+        if ($cast) return response()->json($cast);
+        $room_users = RoomUser::where('room_id', $room_id)->get()->toArray();
+        $room_users_id = array_column($room_users, 'id');
+        //現段階で決まっている村人の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 1)->count();
+        if ($room_user_cast_1_count < 3) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 1,
+            ]);
+            return response()->json($cast);
+        }
+        //現段階で決まっている人狼の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 2)->count();
+        if ($room_user_cast_1_count < 2) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 2,
+            ]);
+            return response()->json($cast);
+        }
+        //現段階で決まっている占い師の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 3)->count();
+        if ($room_user_cast_1_count < 1) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 3,
+            ]);
+            return response()->json($cast);
+        }
+        //現段階で決まっている霊能者の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 4)->count();
+        if ($room_user_cast_1_count < 1) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 4,
+            ]);
+            return response()->json($cast);
+        }
+        //現段階で決まっている狩人の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 5)->count();
+        if ($room_user_cast_1_count < 1) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 5,
+            ]);
+            return response()->json($cast);
+        }
+        //現段階で決まっている狂人の人数
+        $room_user_cast_1_count = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 6)->count();
+        if ($room_user_cast_1_count < 1) {
+            $cast = Cast::create([
+                'room_user_id' => $room_user_id,
+                'position_id' => 6,
+            ]);
+            return response()->json($cast);
+        }
+    }
+
+    //ゲーム開始前の確認
+    public function confirmed(Request $request)
+    {
+        $room_id = $request['roomId'];
+        $cast_id = $request['castId'];
+        $cast = Cast::find($cast_id);
+        $cast->confirmed = 1;
+        $cast->save();
+        $room_users = RoomUser::where('room_id', $room_id)->get()->toArray();
+        $room_users_id = array_column($room_users, 'id');
+        $confirmed_casts_count = Cast::whereIn('room_user_id', $room_users_id)->where('confirmed', 1)->count();
+        if (count($room_users_id) === $confirmed_casts_count) {
+            //全員の準備が整った時
+            event(new RoomConfirmEvent($room_id, true));
+            $room = Room::find($room_id);
+            $room->phase = 2;
+            $room->game_start_time = Carbon::now();
+            $room->save();
+        }
+        return response()->noContent();
+    }
+
+    public static function userCasting($room_id, $user_id)
+    {
+        $room_user = RoomUser::where('room_id', $room_id)->where('user_id', $user_id)->first('id');
+        $room_user_id = $room_user['id'];
+        $cast = Cast::where('room_user_id', $room_user_id)->first(['id', 'position_id']);
+        if (!$cast) return null;
+        return $cast;
     }
 }
