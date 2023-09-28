@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+//Models
 use App\Models\Room;
 use App\Models\RoomInformation;
+use App\Models\Cast;
+use App\Models\RoomUser;
+//Events
 use App\Events\RoomEvent;
 use App\Events\RoomVoiceUserEvent;
 use App\Events\RoomReadyEvent;
+//Facades
 use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
@@ -114,5 +119,88 @@ class RoomController extends Controller
         $room->save();
         event(new RoomReadyEvent($room_id, 1));
         return response()->noContent();
+    }
+
+    //役職が買われたとき
+    public function select_position(Request $request)
+    {
+        $room_id = $request['roomId'];
+        $user_id = $request['userId'];
+        $position_id = $request['positionId'];
+        $room_user = RoomUser::where('room_id', $room_id)->where('user_id', $user_id)->first('id');
+        $room_user_id = $room_user['id'];
+        $cast = Cast::where('room_user_id', $room_user_id)->first();
+        //すでに役が決まっている場合は何もしないでreturn
+        if ($cast) return response()->json(['couldBuy' => false]);
+        //まだ役が決まっていない場合は役がまだ空いていれば取得する
+        $room_users = RoomUser::where('room_id', $room_id)->get()->toArray();
+        $room_users_id = array_column($room_users, 'id');
+
+        switch ($position_id) {
+            case 1:
+                //村人が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 1)->get();
+                //すでに3人村人が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 3) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 1,
+                ]);
+                break;
+            case 2:
+                //人狼が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 2)->get();
+                //すでに2人人狼が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 2) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 2,
+                ]);
+                break;
+            case 3:
+                //占い師が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 3)->get();
+                //すでに1人占い師が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 1) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 3,
+                ]);
+                break;
+            case 4:
+                //霊能者が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 4)->get();
+                //すでに1人霊能者が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 1) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 4,
+                ]);
+                break;
+            case 5:
+                //狩人が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 5)->get();
+                //すでに1人狩人が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 1) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 5,
+                ]);
+                break;
+            case 6:
+                //狂人が買われた場合
+                $room_user_casts = Cast::whereIn('room_user_id', $room_users_id)->where('position_id', 6)->get();
+                //すでに1人狂人が決定していたら何もしないでreturn
+                if (count($room_user_casts) === 1) return response()->json(['couldBuy' => false]);
+                Cast::create([
+                    'room_user_id' => $room_user_id,
+                    'position_id' => 6,
+                ]);
+                break;
+            default:
+                //どのケースにも当てはまらない場合はないもしないでreturn
+                return response()->json(['couldBuy' => false]);
+        }
+        return response()->json(['couldBuy' => true]);
     }
 }

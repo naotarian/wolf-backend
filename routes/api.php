@@ -27,5 +27,6 @@ Route::post('/room/dissolution', [RoomController::class, 'dissolution']);
 Route::post('/room/voiceUser/add', [RoomController::class, 'voiceUserAdd']);
 Route::post('/room/voiceUser/remove', [RoomController::class, 'voiceUserRemove']);
 Route::post('/room/pre_start', [RoomController::class, 'pre_start']);
+Route::post('/room/select_position', [RoomController::class, 'select_position']);
 
 require __DIR__ . '/auth.php';
