@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('master_user_id')->comment('マスターユーザーID');
+            $table->datetime('game_start_time')->nullable()->comment('ゲーム開始日時');
+            $table->integer('phase')->default(0)->comment('フェーズ(0: 準備中, 1: 役職選択中, 2: プレイ中)');
             $table->timestamps();
             $table->softDeletes();
             $table->foreign('master_user_id')->references('id')->on('users')->onDelete('cascade');

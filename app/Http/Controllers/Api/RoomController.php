@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\RoomInformation;
 use App\Events\RoomEvent;
 use App\Events\RoomVoiceUserEvent;
+use App\Events\RoomReadyEvent;
 use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
@@ -29,6 +30,7 @@ class RoomController extends Controller
         if (!$room) return response()->noContent();
         session(['voiceUserId' => ['test']]);
         event(new RoomVoiceUserEvent($room->id, ['test']));
+        event(new RoomReadyEvent($room->id, 0));
         return response()->json(['roomId' => $room['id']]);
     }
     public function participation(Request $request)
@@ -47,6 +49,7 @@ class RoomController extends Controller
             array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id]);
         }
         event(new RoomEvent($room->id, $users));
+        event(new RoomReadyEvent($room->id, $room->phase));
         return response()->json($room);
     }
 
@@ -99,6 +102,17 @@ class RoomController extends Controller
         $users = array_diff($voice_users, [$request['userId']]);
         $users = array_values($users);
         event(new RoomVoiceUserEvent($request->roomId, $users));
+        return response()->noContent();
+    }
+
+    //開始ボタンを押したとき(役職選択画面に行くとき)
+    public function pre_start(Request $request)
+    {
+        $room_id = $request['roomId'];
+        $room = Room::find($room_id);
+        $room->phase = 1;
+        $room->save();
+        event(new RoomReadyEvent($room_id, 1));
         return response()->noContent();
     }
 }

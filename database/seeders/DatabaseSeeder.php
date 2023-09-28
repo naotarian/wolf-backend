@@ -13,17 +13,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('users')->truncate();
         DB::table('rooms')->truncate();
         DB::table('room_user')->truncate();
+        DB::table('positions')->truncate();
         $this->call(UserSeeder::class);
+        $this->call(PositionSeeder::class);
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }
