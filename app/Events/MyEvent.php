@@ -13,18 +13,14 @@ class MyEvent implements ShouldBroadcast
   use Dispatchable, InteractsWithSockets, SerializesModels;
 
   public $message;
-  // public $test;
 
   public function __construct($message)
   {
-    \Log::info($message);
     $this->message = $message;
-    // $this->test = 'rrr';
   }
 
   public function broadcastOn()
   {
-    // return new Channel('my-channel', $this->message);
     return ['my-channel'];
   }
 
