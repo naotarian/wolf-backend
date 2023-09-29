@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 //Models
 use App\Models\Room;
 use App\Models\RoomInformation;
+use App\Models\RoomSituation;
 use App\Models\Cast;
 use App\Models\RoomUser;
 //Events
@@ -14,6 +15,9 @@ use App\Events\RoomEvent;
 use App\Events\RoomVoiceUserEvent;
 use App\Events\RoomReadyEvent;
 use App\Events\RoomConfirmEvent;
+use App\Events\RoomSituationEvent;
+use App\Events\RoomCastsEvent;
+//Library
 use Carbon\Carbon;
 //Facades
 use Illuminate\Support\Facades\DB;
@@ -32,6 +36,10 @@ class RoomController extends Controller
                 'room_id' => $room->id,
                 'rule' => $text
             ]);
+            RoomSituation::create([
+                'room_id' => $room->id,
+                'is_night' => 1
+            ]);
             return $room;
         }, 3);
         if (!$room) return response()->noContent();
@@ -39,6 +47,8 @@ class RoomController extends Controller
         event(new RoomVoiceUserEvent($room->id, ['test']));
         event(new RoomReadyEvent($room->id, 0));
         event(new RoomConfirmEvent($room->id, false));
+        event(new RoomSituationEvent($room->id, true));
+        event(new RoomCastsEvent($room->id, []));
         return response()->json(['roomId' => $room['id']]);
     }
     public function participation(Request $request)
@@ -54,7 +64,17 @@ class RoomController extends Controller
         $room->users()->sync($user_ids);
         $users = [];
         foreach ($room->fresh()->users as $user) {
-            array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id]);
+            $room_user = RoomUser::where('user_id', $user->id)->where('room_id', $room->id)->first();
+            $alive = true;
+            $position = 0;
+            if ($room_user) {
+                $cast = Cast::where('room_user_id', $room_user->id)->first();
+                if ($cast) {
+                    $alive = $cast->is_alive;
+                    $position = $cast->position_id;
+                }
+            }
+            array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id, 'is_alive' => $alive, 'position' => $position]);
         }
         event(new RoomEvent($room->id, $users));
         event(new RoomReadyEvent($room->id, $room->phase));
@@ -288,11 +308,26 @@ class RoomController extends Controller
         $confirmed_casts_count = Cast::whereIn('room_user_id', $room_users_id)->where('confirmed', 1)->count();
         if (count($room_users_id) === $confirmed_casts_count) {
             //全員の準備が整った時
-            event(new RoomConfirmEvent($room_id, true));
             $room = Room::find($room_id);
             $room->phase = 2;
             $room->game_start_time = Carbon::now();
             $room->save();
+            $users = [];
+            foreach ($room->fresh()->users as $user) {
+                $room_user = RoomUser::where('user_id', $user->id)->where('room_id', $room->id)->first();
+                $alive = true;
+                $position = 0;
+                if ($room_user) {
+                    $cast = Cast::where('room_user_id', $room_user->id)->first();
+                    if ($cast) {
+                        $alive = $cast->is_alive;
+                        $position = $cast->position_id;
+                    }
+                }
+                array_push($users, ['name' => $user->name, 'id' => $user->id, 'character_id' => $user->character_id, 'is_alive' => $alive, 'position' => $position]);
+            }
+            event(new RoomEvent($room->id, $users));
+            event(new RoomConfirmEvent($room_id, true));
         }
         return response()->noContent();
     }
