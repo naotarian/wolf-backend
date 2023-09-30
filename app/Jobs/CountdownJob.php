@@ -30,7 +30,8 @@ class CountdownJob implements ShouldQueue
      */
     public function handle(): void
     {
-        while ($this->count > 0) {
+        while ($this->count >= 0) {
+            \Log::info($this->count);
             event(new RoomCountdownEvent($this->room_id, $this->count));
             $this->count--;
             sleep(1);

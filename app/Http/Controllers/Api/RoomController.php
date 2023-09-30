@@ -45,8 +45,7 @@ class RoomController extends Controller
             return $room;
         }, 3);
         if (!$room) return response()->noContent();
-        session(['voiceUserId' => ['test']]);
-        event(new RoomVoiceUserEvent($room->id, ['test']));
+        event(new RoomVoiceUserEvent($room->id, []));
         event(new RoomReadyEvent($room->id, 0));
         event(new RoomConfirmEvent($room->id, false));
         event(new RoomSituationEvent($room->id, true));
@@ -143,6 +142,7 @@ class RoomController extends Controller
         $room->phase = 1;
         $room->save();
         event(new RoomReadyEvent($room_id, 1));
+        CountdownJob::dispatch($room_id, 15)->onConnection('database');
         return response()->noContent();
     }
 
@@ -332,7 +332,6 @@ class RoomController extends Controller
             event(new RoomEvent($room->id, $users));
             event(new RoomConfirmEvent($room_id, true));
         }
-        \Log::info('-----------------------------');
         return response()->noContent();
     }
 
