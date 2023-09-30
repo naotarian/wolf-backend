@@ -17,10 +17,12 @@ use App\Events\RoomReadyEvent;
 use App\Events\RoomConfirmEvent;
 use App\Events\RoomSituationEvent;
 use App\Events\RoomCastsEvent;
+use App\Events\RoomCountdownEvent;
 //Library
 use Carbon\Carbon;
 //Facades
 use Illuminate\Support\Facades\DB;
+use App\Jobs\CountdownJob;
 
 class RoomController extends Controller
 {
@@ -307,6 +309,7 @@ class RoomController extends Controller
         $room_users_id = array_column($room_users, 'id');
         $confirmed_casts_count = Cast::whereIn('room_user_id', $room_users_id)->where('confirmed', 1)->count();
         if (count($room_users_id) === $confirmed_casts_count) {
+            CountdownJob::dispatch($room_id, 30)->onConnection('database');
             //全員の準備が整った時
             $room = Room::find($room_id);
             $room->phase = 2;
@@ -329,6 +332,7 @@ class RoomController extends Controller
             event(new RoomEvent($room->id, $users));
             event(new RoomConfirmEvent($room_id, true));
         }
+        \Log::info('-----------------------------');
         return response()->noContent();
     }
 
