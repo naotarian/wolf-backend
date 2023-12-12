@@ -10,6 +10,7 @@ use App\Models\RoomInformation;
 use App\Models\RoomSituation;
 use App\Models\Cast;
 use App\Models\RoomUser;
+use App\Models\RoomState;
 //Events
 use App\Events\RoomEvent;
 use App\Events\RoomVoiceUserEvent;
@@ -56,6 +57,10 @@ class RoomController extends Controller
     {
         $req_room_id = $request['roomId'];
         $room = Room::find($req_room_id);
+        $room->selectPositionRemainTime = 30;
+        if ($room->phase === 1) {
+            $room->selectPositionRemainTime = 30 - $this->convertToDayTimeAgo($room->game_start_time);
+        }
         if (!$room) return response()->json('ルームがありません', 404);
         $user_ids = [];
         foreach ($room->users as $user) {
@@ -80,6 +85,18 @@ class RoomController extends Controller
         event(new RoomEvent($room->id, $users));
         event(new RoomReadyEvent($room->id, $room->phase));
         return response()->json($room);
+    }
+
+    function convertToDayTimeAgo(string $datetime)
+    {
+        // ※UNIX時間とは、UTC時刻における1970年1月1日午前0時0分0秒（UNIXエポック）からの経過秒数を計算したものです。
+        // $datetimeには'2023-02-13 21:55:00'のような指定した日時の文字列が入ってくる想定です
+        $unix = strtotime($datetime);
+        // time関数はUNIX時刻から現在までの秒数を返します
+        $now = time();
+        // 現在の時刻から指定した日時のユニックスタイムを引きます。これによって現在からどれくらい時間が経っているかを取得することができます。
+        $diff_sec = $now - $unix;
+        return $diff_sec;
     }
 
     public function list()
@@ -140,9 +157,10 @@ class RoomController extends Controller
         $room_id = $request['roomId'];
         $room = Room::find($room_id);
         $room->phase = 1;
+        $room->game_start_time = Carbon::now();
         $room->save();
         event(new RoomReadyEvent($room_id, 1));
-        CountdownJob::dispatch($room_id, 15)->onConnection('database');
+        // CountdownJob::dispatch($room_id, 15)->onConnection('database');
         return response()->noContent();
     }
 
@@ -297,6 +315,7 @@ class RoomController extends Controller
         }
     }
 
+
     //ゲーム開始前の確認
     public function confirmed(Request $request)
     {
@@ -331,6 +350,11 @@ class RoomController extends Controller
             }
             event(new RoomEvent($room->id, $users));
             event(new RoomConfirmEvent($room_id, true));
+            RoomState::create([
+                'room_id' => $room_id,
+                'day_number' => 0,
+                'turn' => 2,
+            ]);
         }
         return response()->noContent();
     }

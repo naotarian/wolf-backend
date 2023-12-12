@@ -13,4 +13,9 @@ class RoomUser extends Model
     'room_id',
     'user_id',
   ];
+
+  public function cast()
+  {
+    return $this->hasOne(Cast::class, 'id', 'room_user_id');
+  }
 }
